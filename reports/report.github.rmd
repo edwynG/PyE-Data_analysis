@@ -1,0 +1,192 @@
+---
+title: "PyE - Proyecto Práctico"
+author: "Edwyn guzman"
+date: "`r Sys.Date()`"
+output: 
+  md_document:
+    variant: markdown_github
+---
+
+```{r setup, include=FALSE}
+  knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+  library(ggplot2)
+  library(knitr)
+  source("../scripts/graphics.r")
+  source("../scripts/data_utils.r")
+```
+# PyE Proyecto práctico - Analisis de datos
+Este análisis se centra en el estudio de dos variables aleatorias ( W ) y ( X ), a partir de muestras observadas. Se presentan las distribuciones teóricas propuestas, medidas descriptivas, y comparaciones entre las características muestrales y poblacionales. Además, se analiza la relación entre ( X ) y ( Y ) mediante un modelo de regresión lineal.
+
+## Para las muestras de la variable aleatoria W
+### Histograma de frecuencias de W
+  ```{r, echo=FALSE}
+    samples_w <- read.csv("../data/MuestraW21.csv")
+    samples_measures_w <- get_samples_measures(samples_w$W)
+    graphics_num_w <- get_hist(samples_w, aes(x = W),
+                            title = "Frecuencias relativas de W",
+                            breaks = seq(samples_measures_w["min"],
+                            samples_measures_w["max"], 1), bin_width = 1)
+
+  ```
+![](graphics/histrograma_frec_relativas_w5.png)
+
+  **Distribución propuesta:**
+   Se sugiere que la variable W sigue una **distribución geométrica**. Las demás distribuciones fueron descartadas por los siguientes motivos:
+
+   - **Binomial:** Esta distribución comienza en 0, mientras que W comienza en 1, por lo que fue descartada.
+
+   - **Uniforme:** La gráfica no se asemeja al histograma de frecuencias de W.
+
+   - **Poisson:** La media y la varianza deben ser iguales; dado que no se aproximan, se descartó.
+
+   - **Binomial negativa:** Dado que el mínimo de W es 1, tenemos que \( K=1 \), lo que nos lleva al caso particular de la binomial negativa, donde \( W \sim \text{Geométrica}(\lambda) = W \sim \text{NegBin}(1,\lambda) \).
+
+   Asumiendo que W sigue una distribución geométrica, se tiene que \( E(W) = \frac{1}{q} \). Por lo tanto, \( q = \frac{1}{E(W)} \). El valor que más se aproxima a \( q \) es \( \frac{1}{3} \).
+
+### Gráfica de barras comparativas
+  
+   La comparación gráfica confirma que la distribución geométrica con \( q = \frac{1}{3} \) es un buen modelo para la variable W.
+   ```{r, echo=FALSE}
+    q <- 1 / 3
+    w_vector <- samples_measures_w["min"]:samples_measures_w["max"]
+    fdp_proposal <- data.frame(X = w_vector, prob = dgeom(w_vector, prob = q))
+    #! Grafico de barras comparativo - frecuencias relativas y las fdp teorica
+    title_cmp_w <- "W: Frecuencias relativas observadas vs fdp hipotetica"
+    values_cmp_w <- c("Observaciones" = "lightblue",
+                      "Hipotetica\nW~Geometrica(1/3)" = "lightgreen")
+    graphics_cmp_w <- get_comp_bar_samples(samples_w$W,
+                                          fdp_proposal$prob[-22],
+                                          1:22,
+                                          title = title_cmp_w,
+                                          values = values_cmp_w)
+   ```
+
+  ![](graphics/cuadro_comparativo_barra1.png)
+    
+  ```{r, echo=FALSE}
+    fdp_proposal_measures_w <- c(avg = 1 / q, moda = 1, var = (1 - q) / q^2, min = 1, max = NA) # Crear tabla comparativa 
+    cmp_table_w <- data.frame(
+                              Medida = c("Media", "Moda", "Varianza", "Minimo", "Maximo"),
+                              Muestra = c(samples_measures_w[["avg"]],
+                                          samples_measures_w[["moda"]],
+                                          samples_measures_w[["var"]],
+                                          samples_measures_w[["min"]],
+                                          samples_measures_w[["max"]]),
+                              Fdp = c(fdp_proposal_measures_w[["avg"]],
+                                      fdp_proposal_measures_w[["moda"]],
+                                      fdp_proposal_measures_w[["var"]],
+                                      fdp_proposal_measures_w[["min"]],
+                                      fdp_proposal_measures_w[["max"]])
+                            )
+
+    
+    kable(cmp_table_w, caption = "Comparacion entre medidas muestrales y pobalcionales de W")
+  ```
+
+## Para las muestras de la variable aleatoria conjunta (X, Y)
+### Histograma de frecuencias de X
+  ```{r, echo=FALSE}
+  samples_xy <- read.csv("../data/MuestraXY21.csv")
+  samples_measures_x <- get_samples_measures(samples_xy$X) # Calcular medidas teóricas 
+  x_vector <- 0:40
+  graphics_continue_x <- get_hist(samples_xy, aes(x = X),
+                                  title = "Frecuencias relativas de X",
+                                  breaks = seq(0, samples_measures_x["max"], 1),
+                                  bin_width = 0.4)
+  lambda_aprox <- 1 / 5 
+  alfa_aprox <- 1
+  #* Calcular la densidad de la distribución gamma
+  y_gamma <- dgamma(x_vector, shape = alfa_aprox, rate = lambda_aprox)
+  graphics_proposal_x <- get_graph_fdp(x_vector, y_gamma,
+                                      title = "Grafica de fdp hipotetica de X",
+                                      name_fdp = "Exponencial")
+  
+  ```
+
+![](graphics/histograma_frec_relativas_x2.png)
+
+  **Distribución propuesta:**
+   Se sugiere que la variable X sigue una **distribución exponencial**. Las demás distribuciones fueron descartadas por los siguientes motivos:
+
+   - **Normal:** La gráfica de esta distribución no se asemeja a la gráfica de frecuencias relativas de X. No hay moda, y la media y la varianza no se aproximan, por lo que fue descartada.
+
+   - **Triangular:** La gráfica de esta distribución no se asemeja a la gráfica de frecuencias relativas de X. No hay moda, por lo que fue descartada.
+
+   - **Uniforme:** La gráfica de esta distribución no se asemeja a la gráfica de frecuencias relativas de X.
+
+   - **Gamma:** En este caso, \( \alpha = 1 \), lo que nos lleva al caso particular de la Gamma, donde \( W \sim \text{Expo}(\lambda) = W \sim \text{Gamma}(1, \lambda) \).
+
+   Supongamos que W sigue una distribución, entonces tenemos:
+
+   - \( E(X) =  \frac{ \alpha }{ \lambda } \)
+
+   - \( VAR(X) = \frac{ \alpha }{ \lambda^2 } \)
+
+   De aquí, se deduce que:
+
+   
+   \( E(X) \cdot \lambda = VAR(X) \cdot \lambda^2 
+   \)  
+    =>   
+   \( VAR(X) \cdot \lambda^2 - E(X) \cdot \lambda = 0
+   \)
+
+   Resolviendo, obtenemos \( \lambda \approx 0.20098 \) y \( \alpha \approx 1.01 \). Por lo tanto, los valores que más se aproximan son \( \alpha = 1 \) y \( \lambda = \frac{ 1 }{ 5 } \), lo que implica que \( X \sim \text{Gamma}(1, \frac{ 1 }{ 5 }) = X \sim \text{ Exponencial }(\frac{ 1 }{ 5 }) \).
+
+### Gráfica de la función de densidad hipotética de X
+
+  ![](graphics/grafica_fdp_x_propuesta3.png)
+
+  ```{r, echo=FALSE}
+    fdp_proposal_measures_x <- c(avg = alfa_aprox / lambda_aprox,
+                                median = qgamma(0.5, shape = alfa_aprox, rate = lambda_aprox),
+                                var = alfa_aprox / lambda_aprox^2, 
+                                min = 0, max = NA) # Crear tabla comparativa 
+    cmp_table_x <- data.frame(
+                              Medida = c("Media", "Mediana", "Varianza", "Minimo", "Maximo"),
+                              Muestra = c(samples_measures_x[["avg"]],
+                                          samples_measures_x[["median"]],
+                                          samples_measures_x[["var"]],
+                                          samples_measures_x[["min"]],
+                                          samples_measures_x[["max"]]),
+                              Fdp = c(fdp_proposal_measures_x[["avg"]],
+                                      fdp_proposal_measures_x[["median"]],
+                                      fdp_proposal_measures_x[["var"]],
+                                      fdp_proposal_measures_x[["min"]],
+                                      fdp_proposal_measures_x[["max"]])
+                            )
+      
+    kable(cmp_table_x, caption = "Comparacion entre medidas muestrales y pobalcionales de X") 
+
+      
+  ```
+
+   Las medidas muestrales de X son consistentes con las medidas teóricas de una distribución exponencial con \( \lambda = \frac{1}{5} \).
+
+### Regresión lineal de Y sobre X
+   
+  ```{r, echo=FALSE}
+    graphic_dispersion_xy <- get_graph_disper(samples_xy, aes(x = X, y = Y),
+                                              title = "Gráfico de dispersión de las v.a conjuntas (X, Y)",
+                                              breaks = seq(0, 41, 1))
+    
+  ```
+  ![Grafico de dispersión de las v.a conjuntas (X,Y)](graphics/grafica_dispersion_xy4.png)
+
+   - Coeficiente de correlación muestral \( r: 0.818462675226843 \).
+
+   - La recta de regresión lineal es \( E(Y|X) = \text{aX} + b \), donde los coeficientes son \( a = 0.507828466908272 \) y \( b = 7.94306530005349 \).
+
+   En este caso particular, ¿es útil conocer el valor de X para estimar \( E(Y|X) \)? Como el coeficiente de correlación es cercano a 1, esto sugiere una relación lineal positiva entre las dos variables. Esto significa que, a medida que una variable aumenta, la otra también tiende a aumentar de manera consistente. Por lo tanto, es útil conocer el valor de X para estimar E(X|Y), debido a que X explica una gran proporción sobre la variabilidad de Y.
+
+  ```{r,echo=FALSE}
+
+    save_graphics(list(
+      cuadro_comparativo_barra = graphics_cmp_w,
+      histograma_frec_relativas_x = graphics_continue_x,
+      grafica_fdp_x_propuesta = graphics_proposal_x,
+      grafica_dispersion_xy = graphic_dispersion_xy,
+      histrograma_frec_relativas_w = graphics_num_w
+    ), "../graphics")
+
+  ```
