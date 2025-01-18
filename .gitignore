@@ -1,0 +1,7 @@
+*.png
+*.html
+*.pdf
+*.txt
+!graphics/*.png
+!statement/*.pdf
+ProyectoEdwynGuzman.*
